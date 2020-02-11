@@ -3,10 +3,7 @@ include "./node_modules/circomlib/circuits/babyjub.circom"
 include "./node_modules/circomlib/circuits/gates.circom"
 include "./node_modules/circomlib/circuits/bitify.circom"
 include "./node_modules/circomlib/circuits/escalarmulany.circom"
-var Generator = [
-  995203441582195749578291179787384436505546430278305826713579947235728471134,
-  5472060717959818805561601436314318772137091100104008585924551046643952123905
-]
+
 template DiscreteLogAny() {
     signal private input in; 
     signal input G[2];
@@ -33,8 +30,8 @@ template DiscreteLogFixed() {
     component pvkBits = Num2Bits(256);
     pvkBits.in <== in;
     component mulAny = EscalarMulAny(256);
-    mulAny.p[0] <== Generator[0];
-    mulAny.p[1] <== Generator[1];
+    mulAny.p[0] <== 995203441582195749578291179787384436505546430278305826713579947235728471134;
+    mulAny.p[1] <== 5472060717959818805561601436314318772137091100104008585924551046643952123905;
 
     var i;
     for (i=0; i<256; i++) {
@@ -62,6 +59,7 @@ template EqualElement() {
 template OneOutOfMany(n) {
     signal private input in;
     signal input elements[n*2];
+    signal output out;
     component eq[n];
     component or[n];
     component pk = DiscreteLogFixed();
@@ -81,21 +79,21 @@ template OneOutOfMany(n) {
             or[i].a <== or[i-1].out;
         }
     }
-    or[n-1].out <== 1;
+    or[n-1].out ==> out;
 }
 template ElGamalEncryption() {
     
     signal private input m[2];
     signal private input r;
     signal input pk[2];
-    signal output c1[2];
-    signal output c2[2];  
+    signal output c[4];
+ 
 
     //rG
     component dl1 = DiscreteLogFixed();
     dl1.in <== r;
-    c1[0] <== dl1.out[0];
-    c1[1] <== dl1.out[1];
+    c[0] <== dl1.out[0];
+    c[1] <== dl1.out[1];
     //rPK
     component dl2 = DiscreteLogAny();
     dl2.in <== r;
@@ -107,7 +105,34 @@ template ElGamalEncryption() {
     add.y1 <== m[1];
     add.x2 <== dl2.out[0];
     add.y2 <== dl2.out[0];
-    c2[0] <== add.xout;
-    c2[1] <== add.yout;
+    c[2] <== add.xout;
+    c[3] <== add.yout;
 }
-component main = OneOutOfMany(5)
+template Mjolnir(n) {
+    signal private input x;  //doctor secret key
+    signal private input r;
+    signal input pk[2];
+    signal input elements[n*2];
+    signal input ciphertext[4];
+
+    component oneOutOfMany = OneOutOfMany(n);
+    oneOutOfMany.in <== x;
+    for(var i =0; i<n*2; i++) {
+        oneOutOfMany.elements[i] <== elements[i];
+    }
+    oneOutOfMany.out === 1
+    
+    component dl = DiscreteLogFixed();
+    dl.in <== x;
+    
+    component elGamal = ElGamalEncryption();
+    elGamal.m[0] <== dl.out[0];
+    elGamal.m[1] <== dl.out[1];
+    elGamal.r <== r;
+    elGamal.pk[0] <== pk[0];
+    elGamal.pk[1] <== pk[1];
+    for(var i=0; i<4; i++) {
+        elGamal.c[i] === ciphertext[i];
+    }
+}
+component main = Mjolnir(5)
