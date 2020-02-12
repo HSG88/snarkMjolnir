@@ -104,7 +104,7 @@ template ElGamalEncryption() {
     add.x1 <== m[0];
     add.y1 <== m[1];
     add.x2 <== dl2.out[0];
-    add.y2 <== dl2.out[0];
+    add.y2 <== dl2.out[1];
     c[2] <== add.xout;
     c[3] <== add.yout;
 }

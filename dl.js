@@ -2,8 +2,7 @@ const zkSnark = require('snarkjs')
 const babyJub = require('circomlib').babyJub
 const unstringifyBigInts = zkSnark.unstringifyBigInts
 const fs = require('fs');
-console.log(babyJub.Generator);
-return;
+
 const circDef = JSON.parse(fs.readFileSync('circuit.json'));
 const circuit = new zkSnark.Circuit(circDef);
 console.time("Setup");
@@ -11,9 +10,9 @@ const setup = zkSnark.original.setup(circuit);
 console.timeEnd("Setup");
 let x = zkSnark.bigInt('3');
 let y = babyJub.mulPointEscalar(babyJub.Generator,x);
-let y2 = babyJub.mulPointEscalar(y, x);
+//let y2 = babyJub.mulPointEscalar(y, x);
 console.time("Proof Generation")
-const input = {"in":x, "G":y, "out":y2};
+const input = {"in":x, "out":y};
 const witness = circuit.calculateWitness(input);
 const {proof,publicSignals} = zkSnark.original.genProof(setup.vk_proof,witness)
 console.timeEnd("Proof Generation")
