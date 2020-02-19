@@ -135,4 +135,4 @@ template Mjolnir(n) {
         elGamal.c[i] === ciphertext[i];
     }
 }
-component main = Mjolnir(5)
+component main = Mjolnir(25)
